@@ -1,0 +1,215 @@
+staSeq,avgBCG,minBCG,maxBCG,minBCG1,maxBCG1,nBCG,locationName,locationDescription,s_assessment
+14128,4,4,4,4,4,1,Bantam River,downstream Smokey Hollow Road,F
+14129,4,4,4,4,4,1,Beacon Hill Brook,at Andrasko Road,F
+14172,4,4,4,4,4,1,Deep Brook,upstream mouth near Pootatuck River,F
+14179,5,5,5,5,5,1,East Branch Naugatuck River,downstream Franklin Drive,N
+14183,4,4,4,4,4,1,East Aspetuck River,upstream Wellsville Road,F
+14186,2.651515147,2.651515147,2.651515147,3,3,1,Eightmile Brook,upstream Loughlin Road,F
+14195,4.78048778,4.78048778,4.78048778,5,5,1,Farmill River,upstream Route 110,A
+14197,4,4,4,4,4,2,FARMINGTON RIVER,adjacent Route 4 at Wood-N-Tap (formerly Apricots Restaurant),F
+14209,4.229166683,4.229166683,4.229166683,4,4,1,Fulling Mill Brook,upstream North Main Street,F
+14221,3,3,3,3,3,1,Hammonasset River,Adjacent Summer Hill Road (US Chestnut Hill Rd),F
+14226,5,5,5,5,5,1,Harbor Brook,upstream Coe Avenue,N
+14247,4,4,4,4,4,1,Hollenbeck River,at Cobble Road,F
+14251,4,4,4,4,4,1,Housatonic River,at dirt road North of Route 128,F
+14254,4.143939374,4.143939374,4.143939374,4,4,1,Housatonic River,North 1.5 miles Route 128,F
+14261,3.811145507,3.811145507,3.811145507,4,4,1,Kahn Brook,upstream Koskoff/Hillandale Farm,F
+14263,5,5,5,5,5,1,Kahn Brook,upstream Schwartz Road,N
+14273,6,6,6,6,6,1,Limekiln Brook,upstream side of Route 6 Crossing,N
+14280,4.5,4.5,4.5,4,4,1,Little River,downstream Route 67,A
+14314,3,3,3,3,3,1,Natchaug River,downstream North Bear Hill Road,F
+14316,4.854247108,4.416988432,5,4,5,4,Naugatuck River,"""Frost Bridge"" - upstream Frost Bridge Echo Lake Rd and Route 262",A
+14317,5,5,5,5,5,3,Naugatuck River,behind Fire Station,N
+14319,4.893305443,4.786610885,5,5,5,2,Naugatuck River,upstream falls at Campville Road,A
+14332,5,5,5,5,5,1,Naugatuck River,adjacent North end of Linden Park,N
+14341,5,5,5,5,5,1,Naugatuck River,at Palmer Bridge Street,N
+14355,4.375634529,4.375634529,4.375634529,4,4,1,Nonewaug River,downstream Route 47 (Washington Road),F
+14358,5,5,5,5,5,1,Noroton River,Behind St. John's Cemetary,N
+14360,5,5,5,5,5,3,Norwalk River,upstream Cooper Pond Brook Confluence at Branchville RR,N
+14361,5,5,5,5,5,4,Norwalk River,upstream Perry Avenue,N
+14366,4,4,4,4,4,1,Norwalk River,upstream Old Mill Road,F
+14370,4.85913529,4.577405869,5,5,5,3,Norwalk River,downstream of Old Ridgefield Road crossing In Schenck's Island Park,A
+14390,4,4,4,4,4,1,Pequabuck River,upper end Rockwell Park,F
+14392,5,5,5,5,5,2,Pequabuck River,adjacent USGS Gage upstream of Central Avenue,N
+14394,5,5,5,5,5,2,Pequonnock River,adjacent Unity Park,N
+14404,3.06694562,3.06694562,3.06694562,3,3,1,Pomperaug River,upstream Transylvania Brook,F
+14409,4.379629631,4.379629631,4.379629631,4,4,1,Pootatuck River,downstream Route 84 West overpass,F
+14410,4,4,4,4,4,2,Quinebaug River,upstream Route 197,F
+14413,5,5,5,5,5,3,Quinnipiac River,downstream small dam behind water company building on Syndall Street,N
+14414,5,5,5,5,5,3,Quinnipiac River,adjacent Route 15 USGS gauge,N
+14434,4.851351345,4.851351345,4.851351345,5,5,1,Salmon Creek (Salmon Kill),upstream Salmon Kill Road at USGS gage,A
+14439,4,4,4,4,4,1,Salmon Creek (Salmon Kill),downstream Route 112,F
+14441,2.28372093,2.151162789,2.5,2,2,3,Salmon River,downstream 0.7 miles RR bridge,F
+14442,2.8487837,2.357142866,3.213017746,2,3,3,Sandy Brook,opposite Grange Hall off Riverton Road,F
+14444,3.5,3,4,3,4,3,Saugatuck River,downstream Route 107 & Route 53 Junction,F
+14445,4,4,4,4,4,1,Saugatuck River,at DS end of Fly Fishing Only Area (1 Ford Rd),F
+14450,4.25,3,6,3,6,4,Shepaug River,downstream 100 meters Wellers Bridge Road (Route 67),F
+14451,3.918230571,3.836461142,4,4,4,2,Shetucket River,downstream Plains Road adjacent to USGS gauge,F
+14456,5,5,5,5,5,4,Steele Brook,parallel North Parking Lot for Municipal stadium,N
+14458,5,5,5,5,5,3,Still River,under Route 7 overpass adjacent to Gray's Bridge Road,N
+14461,3.5,3,4,3,4,2,Sandy Brook (Still River),adjacent USGS gage off Robertsville Road,F
+14470,2.990310341,2.205882344,3.736401659,2,4,4,Tankerhoosen River,upstream Tunnel Road,F
+14471,3.548223349,3.548223349,3.548223349,4,4,1,Tenmile River,upstream 0.25 miles mouth,F
+14474,4,4,4,4,4,1,Transylvania Brook,upstream East Flat Hill Road,F
+14482,5.5,5,6,5,6,2,West Branch Naugatuck River,downstream Route 4,N
+14484,2.795918361,2.795918361,2.795918361,2,2,1,West Branch Salmon Brook,upstream 50 meters Barndoor Hills Road,F
+14488,3.5,3.5,3.5,3,3,1,West Aspetuck River,Upstream Aspetuck Ridge Road (near Sand Rd),F
+14520,5,5,5,5,5,1,Factory Brook,upstream Salmonkill Road,N
+14548,2.5,2.5,2.5,2,2,1,Mattabesset River,east bank end of Kirby Road,F
+14555,4.557692319,4.557692319,4.557692319,5,5,1,Norwalk River,upstream Kent Road (USGS gauge),A
+14556,5,5,5,5,5,1,Silvermine River,upstream James Street,N
+14580,4.30188678,4.30188678,4.30188678,4,4,1,Willimantic River,adjacent to park upstream Stafford POTW,F
+14581,4,4,4,4,4,3,Willimantic River,downstream Stafford POTW,F
+14584,3,3,3,3,3,1,Roaring Brook,at Route 32,F
+14605,4.166666667,3.5,5,3,5,3,Eightmile River,downstream 100 meters Prospect Street,F
+14669,4.608058618,4.608058618,4.608058618,5,5,1,French River,at Main Street (Red Bridge Road),A
+14686,5,5,5,5,5,1,Blackberry River,Behind Elm Knoll Farm at second tractor crossing,N
+14687,4.51694914,4.51694914,4.51694914,5,5,1,Blackberry River,adjacent well field south of Route 7 crossing,A
+14688,5,5,5,5,5,1,Blackberry River,behind Bircron company DS rte 44,N
+14706,3.957711452,3.915422903,4,4,4,2,Whitford Brook,upstream North Stonington Rd,F
+14711,4.5,4,5,4,5,2,Transylvania Brook,25 meters DS Whale Pass,A
+14712,4,4,4,4,4,1,Transylvania Brook,30 meters upstream Whale Pass,F
+14720,2.909280939,2.115384629,3.521739129,2,4,4,Green Fall River,upstream confluence with Wyassup Bk US Clarks Fall Rd.,F
+14727,4,4,4,4,4,1,Latimer Brook,upstream Chapman Drive,F
+14740,3,3,3,3,3,2,Quaker Brook,Approx. 1/2 mile down Rte. 37 past Great Hollow Nature Preserve & Ecological Research Center,F
+14741,3.5,3.5,3.5,3,3,1,Titicus River,upstream Sherwood Road,F
+14773,5.25,5.25,5.25,5,5,1,Fenger Brook,downstream 100 meters Route 1,N
+14784,5,5,5,5,5,1,East Swamp Brook,at Shelter Rock Road,N
+14799,5,5,5,5,5,1,Steele Brook,at Echo Lake Road,N
+14800,4.740183135,4,5,4,5,4,Steele Brook,upstream Route 6 (Culter Street),A
+14813,3.5,3.5,3.5,3,3,1,Blackberry River,upstream Jacquier Farm Complex,F
+14825,4.946058085,4.838174255,5,5,5,3,Naugatuck River,upstream Route 222 (6) Crossing,A
+14828,3.369233116,3.101694934,3.636771299,3,4,2,Farmington River,downstream Route 177,F
+14880,3,3,3,3,3,1,Sages Ravine Brook,500 feet upstream route 41,F
+15000,4.770053496,4.770053496,4.770053496,5,5,1,Hollenbeck River,Adjacent to Rte 63 at SNET pole #856,A
+15004,4.661087886,4.661087886,4.661087886,5,5,1,Housatonic River,"""SWIFTS BRIDGE"" - upstream old bridge abutments off River road Confluence Gunn Brook at Swifts Bridge",A
+15013,4,4,4,4,4,1,Mill River,at first pull-off DS Tuttle Road,F
+15020,3.966981124,3.933962248,4,4,4,2,Eightmile River,150 meters downstream Confluence with East branch eightmile R. (rte 156),F
+15035,2.884615371,2.884615371,2.884615371,3,3,1,Spruce Brook,upstream Mouth,F
+15043,3,3,3,3,3,1,Furnace Brook,upstream Mouth to Route 4,F
+15079,5,5,5,5,5,1,Norwalk River,upstream Route 107,N
+15092,3,3,3,3,3,1,Fenton River,upstream Old Turnpike Road,F
+15102,4.628318564,4.628318564,4.628318564,5,5,1,Means Brook,DS Sawmill City Rd.,A
+15136,4.996282538,4.996282538,4.996282538,5,5,1,Hunts Brook,Adjacent to Old Mill Rd.,A
+15239,4,4,4,4,4,1,East Branch Byram River,upstream John Street (Audubon property),F
+15240,2.666666667,2,3,2,3,3,Hubbard Brook,upstream Route 20 on MDC property,F
+15274,4,4,4,4,4,1,Sargent River,At Sperry Rd,F
+15294,5,5,5,5,5,1,Norwalk River,downstream Rte 33 behind Red Rooster Pub,N
+15301,5,5,5,5,5,1,Eagleville Brook,Upstream side #43 Hunting Lodge Road (private driveway),N
+15304,3.70781893,3.70781893,3.70781893,4,4,1,Eagleville Brook,Upstream NNT to Eagleville Brook Adj. To N. Eagleville Road,F
+15312,3.774193555,3.774193555,3.774193555,4,4,1,Beaver Brook,Downstream bridge at 55-123 Beaver Brook Road,F
+15315,2.833333323,2.833333323,2.833333323,3,3,1,Burnham Brook,"Upstream mouth (Within Burnham Brook Preserve, off Dolbia Hill Road)",F
+15357,5,5,5,5,5,1,Sasco Brook,at Wakeman Lane,N
+15397,4.308457704,4.308457704,4.308457704,4,4,1,Silvermine River,US Silvermine Elementary School,F
+15479,5,5,5,5,5,3,Quinnipiac River,downstream West Center Street,N
+15499,2.870679376,2.223175979,4,2,4,4,West Branch Salmon Brook,at Simsbury Road,F
+15529,4,4,4,4,4,1,Macedonia Brook,upstream Appalachian Trail Foot Bridge,F
+15530,4,4,4,4,4,3,Weekeepeemee River,DS Jacks Bridge Road at USGS gage,F
+15531,3,3,3,3,3,1,Leadmine Brook,"downstream enter near #781 south road, 400 m from south road bridge",F
+15556,5,5,5,5,5,1,Still River,downstream Route 133 crossing under powerlines,N
+15581,3,3,3,3,3,1,Pond Brook,at Bridge at State Boat Launch (mouth),F
+15689,3,3,3,3,3,1,Moodus River,at North Moodus Road,F
+15783,4,4,4,4,4,1,Eagleville Brook,upstream Route 32,F
+15796,3,3,3,3,3,4,PENDLETON HILL BROOK,Upstream Grindstone Hill Road PENDLETON HILL BROOK NEAR CLARKS FALLS,F
+15825,3.575892849,3.151785697,4,3,4,2,West Branch Farmington River,upstream 500 meters Rte 318 Bridge,F
+15857,5,5,5,5,5,1,Mill River,at upper parking lot Perry Mill Pond River Lab access area,N
+15886,4,4,4,4,4,1,HOUSATONIC RIVER,at Route 7 Crossing in Merwinsville,F
+15901,3.869565224,3.869565224,3.869565224,4,4,1,Pond Meadow Brook,upstream confluence with Chatfield Hollow Brook at hiking trail crossing,F
+15994,2.348484853,2.348484853,2.348484853,2,2,1,Eightmile Brook,at Route 34,F
+15996,4,4,4,4,4,1,Fenn Brook,behind Town of Roxbury DPW garage,F
+16050,5,5,5,5,5,1,Naugatuck River,upstream Spruce Brook,N
+16066,4.527397259,4.527397259,4.527397259,5,5,1,Farmington River,between Route 189 and old bridge tressells (in town park),A
+16076,4.270270269,4.270270269,4.270270269,4,4,1,Housatonic River,upstream old bridge abutments end of North Kent Road,F
+16110,3.920634918,3.761904754,4,4,4,3,Mott Hill Brook,off Hunt Ridge Drive at Private Drive for houses # 107-109,F
+16114,4,4,4,4,4,1,Rugg Brook,US first road crossing from reservoir at #224 Old Waterbury Turnpike,F
+16119,2.45495495,2,3,2,3,3,Day Pond Brook,at mouth,F
+16124,2.46486486,2.094594581,2.8,2,3,3,Flat Brook,at Lower Barrack Road,F
+16127,2.485094848,2,2.833333323,2,3,3,Jakes Brook,at Route 272,F
+16131,4,4,4,4,4,1,Chatfield Hollow Brook,at Mouth US River Road,F
+16139,2.966463416,2.865853663,3,3,3,4,Brown Brook,at Route 63,F
+16141,4,4,4,4,4,1,Pequonnock River,at Park Road trail head (upstream of Belden Brook and No Name Trib),F
+16261,3,3,3,3,3,1,Aspetuck River,adjacent Valley Road pull-off and trail head,F
+16276,4,4,4,4,4,1,Latimer Brook,between Route 85 and Beckwith Road,F
+16333,4.30188678,4.30188678,4.30188678,4,4,1,Bullet Hill Brook,"Adjacent to Heritage Rd Downstream Old Field Road (""Ewald Park"")",F
+16335,3.700640734,3,4.525345612,3,5,3,Nonewaug River (Nonnewaug River),at USGS gage adjacent to route 6,F
+16370,2.742424245,2.5,3,2,3,3,Bunnell Brook,upstream diversion for swimming area at recreation area at vineyard rd and clear brook rd,F
+16431,4,4,4,4,4,1,Sprain Brook,downstream Route 47 adjacent to Papermill Road,F
+16502,2,2,2,2,2,1,BELDEN BROOK,"Adjacent Lost Acres Road, Across from Harvey Road",F
+16649,5,5,5,5,5,1,FARMILL RIVER,100 M US Jct of Yutaka Trail and Manhasset Rd,N
+16656,3.097560993,3.097560993,3.097560993,3,3,1,FENN BROOK,US Rte 67,F
+16788,5,5,5,5,5,1,KEELER BROOK,Above Flax Hill Rd,N
+16860,3,3,3,3,3,1,MOODUS RIVER,Off Rte 151 at old factory,F
+16863,2.065217387,2.065217387,2.065217387,2,2,1,MOOSEHORN BROOK,within Roxbury Land Trust E. Griffith Beardsley Preserve,F
+16873,2.166666677,2.166666677,2.166666677,2,2,1,MOUNT HOPE RIVER,US of rte 89,F
+16958,5,5,5,5,5,1,PEQUONNOCK RIVER,Meadow Section of Trumbull Basin Park,N
+16962,4,4,4,4,4,1,PHELPS BROOK,USGS 01187830 at Mill Dam Road Near Collinsville,F
+17012,5,5,5,5,5,1,Rockwood Lake outflow; downstream of Rte 15,Below Rte 15,N
+17324,3.41666668,3.41666668,3.41666668,3,3,1,Latimer Brook,behind St Mathias Church,F
+17366,4,4,4,4,4,1,Fawn Hill Brook,Downstream Route 66 and Flood Road,F
+17433,5,5,5,5,5,1,Trading Cove Brook,above New London Turnpike,N
+17990,3.373626359,3.373626359,3.373626359,3,3,1,Moodus River,"at end of Redmill lane near north moodus road, upstream large stone culvert",F
+18413,3.66666668,3.66666668,3.66666668,4,4,1,Latimer Brook,50m Upstream Colony Road,F
+18447,3,3,3,3,3,1,West River,between Laurel ridge and alma drive at bend close to route 77,F
+18495,5,5,5,5,5,1,Latimer Brook,"US Route 1, behind Flanders Plaza",N
+18671,2.397959173,2.397959173,2.397959173,2,2,1,Strongs Brook,Three Bridges Road,F
+18818,3,3,3,3,3,1,Hedge Brook,below Hopyard Rd,F
+18867,3,3,3,3,3,1,Blackledge River,500m west of Sandy Ln cul-de-sac,F
+18871,4.008298779,4.008298779,4.008298779,4,4,1,Moodus River,25m US of Gristmill Rd Crossing,F
+18921,3,3,3,3,3,1,"Shepaug River, Unnamed Tributary to",100 m above mouth,F
+19016,5,5,5,5,5,1,Trout Brook,"At Loomis St, across from Apt #105",N
+19017,4.5,4.5,4.5,4,4,1,Todd Hollow Brook,Upstream Keegan Rd,A
+19018,4.902439002,4.902439002,4.902439002,5,5,1,Long Meadow Pond Brook,200m Upstream Rubber Ave,A
+19019,2,2,2,2,2,1,Wachocastinook Creek,"Adjacent Mt Riga Rd at gate, upstream driveway #58",F
+19020,3,3,3,3,3,1,Moosehorn Brook,"Adjacent Sentry Hill Rd, at #80/""Few Acres"" farm dirt road",F
+19021,5,5,5,5,5,1,Farm Brook,Upstream Oakland Rd/Rt 30,N
+19024,4,4,4,4,4,1,Crystal Lake Brook,At Williamson Rd,F
+19025,3.932515348,3.932515348,3.932515348,4,4,1,Menunketesuck River,Adjacent #423 Roast Meat Hill,F
+19026,5,5,5,5,5,1,Horseneck Brook,"Upstream Rte 1, behind #177 Putnam Ave",N
+19049,4.495575215,4.495575215,4.495575215,4,4,1,Bullet Hill Brook,150m upstream Garage Road,A
+19120,4.526315792,4.526315792,4.526315792,5,5,1,Bullet Hill Brook,within Southbury Plaza,A
+19121,3,3,3,3,3,1,Bullet Hill Brook,"Adjacent Old Waterbury Road, above Church Road intersection",F
+19639,4,4,4,4,4,1,Skungamaug River,"Adjacent Times Farm Road, between Channel 3 Kids Camp and confluence with Hop River",F
+19644,4,4,4,4,4,1,Fenton River,DS of Liska Road,F
+19655,4,4,4,4,4,1,Bradley Brook,Behind #133 Wells Road,F
+19657,4,4,4,4,4,1,Bunnell Brook,DS USGS Gage,F
+19679,3.407185634,3.407185634,3.407185634,3,3,1,Leadmine Brook,Within state forest land off South Road,F
+19681,4,4,4,4,4,1,Merrick Brook,"Downstream Route 14/Huntington Road, behind #23 Devotion Road",F
+19682,3,3,3,3,3,1,Sixmile Brook,Downstream of State Hwy 188 (Quaker Farms Road),F
+19692,3.384180787,3.384180787,3.384180787,3,3,1,Nepaug River,"At old USGS gage 01187800.  Adjacent 202, upstream Nepaug Reservoir.",F
+19693,5,5,5,5,5,1,Pequabuck River,Adjacent Emmett St,N
+19696,2.777777784,2.777777784,2.777777784,3,3,1,"Whiting River, Unnamed tributary to",At Road Crossing on Moses Mead Road,F
+19697,3.652892554,3.652892554,3.652892554,4,4,1,Mashamoquet Brook,150m US State Hwy 101 (Hartford Providence Tpke),F
+19698,5,5,5,5,5,1,Cove River,"Downstream Route 1, adjacent Palatka St",N
+19699,5,5,5,5,5,1,Rippowam River,Behind Candelight Terrace condos (#154 Cold Spring Rd),N
+19700,3.298342536,3.298342536,3.298342536,3,3,1,Beaver Meadow Brook,"Adjacent Beaver Meadow Road, upstream #316",F
+19931,2.5,2.5,2.5,2,2,1,Charters Brook,Adjacent Shenipsit Lake Road,F
+19933,3,3,3,3,3,1,Thompson Brook,"Behind Mystic Valley Hunt Club, above two impounded ponds",F
+19938,5,5,5,5,5,1,Mint Brook,Adjacent the Airline Trail and Rt 207,N
+19940,3,3,3,3,3,1,Gunn Brook,Adjacent State Hwy 45 in Cornwall,F
+19955,3,3,3,3,3,1,NNT to Saugatuck River,US of State HWY 53 (Redding Rd),F
+19956,4,4,4,4,4,1,Limekiln Brook,Adjacent to Plumtrees Road,F
+19957,3.5,3.5,3.5,3,3,1,Merryall Brook,~160 M US of Indian Trail Road,F
+20122,2.071428567,2.071428567,2.071428567,2,2,1,Deming Brook,850m upstream Under Mountain Road,F
+20123,2.38372093,2.38372093,2.38372093,2,2,1,Labonte Brook,Adjacent Babcock Road,F
+20124,3,3,3,3,3,1,NNT to Sucker Brook,Adj Rt 263,F
+20127,4,4,4,4,4,1,Pequabuck River,In between Rt 72 and Waterbury Rd,F
+20128,3.965811983,3.965811983,3.965811983,4,4,1,Susquetonscut Brook,Upstream Murphy Road,F
+20129,3,3,3,3,3,1,Ocain Brook,Adj Rt 63,F
+20206,2,2,2,2,2,1,Gillette Brook,15ft downstream Williams Road,F
+20232,5,5,5,5,5,1,Harbor Brook,Meriden Green at uppermost footbridge,N
+20236,2.388888892,2.388888892,2.388888892,2,2,1,Goshen Brook,at Sisson Road,F
+20249,4.137254892,4.137254892,4.137254892,4,4,1,Gillette Brook,at Route 16/Middletown Road,F
+20251,2,2,2,2,2,1,Buell Brook,"Behind the Nathan Hale-Ray Middle School, adjacent blue trail picnic tables",F
+20252,2.5,2.5,2.5,2,2,1,Shady Brook,Downstream William F. Palmer Road,F
+20318,3,3,3,3,3,1,Pickett Brook,Adjacent Route 118,F
+20319,2.833333323,2.833333323,2.833333323,3,3,1,"East Branch Shepaug River, Unnamed tributary to","Adjacent to Wadhams Road, ~380 m north",F
+20320,2.5,2.5,2.5,2,2,1,North Brook,Adjacent Ashpohtag Road,F
+20324,4,4,4,4,4,1,Walker Brook,Adjacent Walker Brook Rd S,F
+20325,5,5,5,5,5,1,Quinnipiac River,upstream Crooked Street behind Waxy O'Connor's,N
+20463,5,5,5,5,5,1,Holland Brook,adjacent to Hollister Way W,N
+20471,4.206278042,4.206278042,4.206278042,4,4,1,Jordan Brook,"adjacent to Target, DS of Route 85",F
+20472,5,5,5,5,5,1,West Branch Leadmine Brook,DS of Route 183,N
+20473,5,5,5,5,5,1,Sawmill Brook,upstream of confluence with Conantville Brook,N
+20474,4.905472653,4.905472653,4.905472653,5,5,1,West River,adjacent to Edgewood Skate Park,A
+20475,5,5,5,5,5,1,"Mill River, NNT to",US of Cook Hill Road,N
+20476,5,5,5,5,5,2,Reservoir Brook,US of River Road,N

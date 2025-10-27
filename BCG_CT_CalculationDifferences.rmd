@@ -1,0 +1,374 @@
+---
+title: "CT BCG Model Calculation in R"
+subtitle: "Calculation Differences"
+author: "Erik.Leppo@tetratech.com"
+date: '2021-08-31'
+output:
+  html_document:
+    toc: yes
+    df_print: paged
+  html_notebook:
+    toc: yes
+    depth: 3
+    toc_float: yes
+---
+
+```{r NotebookOptions, eval=FALSE, echo=FALSE}
+#knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+# Purpose
+There are differences in how level memberships are calculated for 15 of the 
+3,131 samples in the BCG model calculation in Access (2017) and R.  These 15 
+samples are across all site types (models).
+
+|SiteType| N|
+|:-------|-:|
+|bug01   | 3|
+|fish01  | 6|
+|fish02  | 4|
+|fish03  | 2|
+
+The differences are only for these 15 samples that make use of alternate rules.
+Because the difference in one level assignment can propagate to other level
+assignments there are 27 total differences when examining each level independent
+of the other levels.
+
+|Condition           | L1 | L2 | L3 | L4 | L5 | L6 |
+|:-------------------|---:|---:|---:|---:|---:|---:|
+|Mismatches          |   0|   7|   4|  10|   6|   0|
+
+The R calculations should be correct for the handling of the min and max 
+application of the metric scores to generate level membership.
+
+Only the 15 samples with issues will be included in the code below.
+
+The differences occur in the function `BCG.Level.Membership()`.  These 
+differences will then propogate to the final level assignment in 
+`BCG.Level.Assignment()`.
+
+15 samples (out of 3,000+) with differences.  All trigger alternate rules.
+R seems to be more correct.  Access doesn't seem to apply the min/max rules
+as intended for alternate rule metrics.
+
+The rowIDs for the affected samples are listed below.
+
+```{r, eval=FALSE}
+Diff_L2_RowID <- c(195, 608, 665, 674, 1065, 1105, 2162)
+Diff_L3_RowID <- c(608, 674, 1065, 2162)
+Diff_L4_RowID <- c(116, 195, 665, 674, 772, 1045, 1068, 1105, 1113, 2366)
+Diff_L5_RowID <- c(116, 772, 1045, 1068, 113, 2375)
+Diff_all_RowID <- sort(unique(c(Diff_L2_RowID
+                                , Diff_L3_RowID
+                                , Diff_L4_RowID
+                                , Diff_L5_RowID)))
+length(Diff_all_RowID)
+
+# Show differences
+# df_diff2 <- df_merge[Diff_all_RowID, ]
+# table(df_diff2$SITE_TYPE)
+```
+
+# Level Membership, Calculation
+Use QC code then filter for only the affected 15 samples.
+
+```{r BAD_Lev_Memb_Calc, eval=FALSE}
+# Packages
+library(readxl)
+library(BCGcalc)
+
+# Data
+fn_Met_Mem <- "CT_BCG_R_QC_20210723.xlsx"
+sn_Met_Mem <- "Access_BCG_MetricMembership"
+df_Met_Mem <- as.data.frame(read_excel(fn_Met_Mem, sheet = sn_Met_Mem, skip = 7))
+
+# BCG Rules, Metrics
+df_rules <- read_excel(system.file("./extdata/Rules.xlsx", package="BCGcalc")
+                       , sheet = "Rules") 
+
+# Munge, Rules
+names(df_rules) <- toupper(names(df_rules))
+
+# Munge, Met Mem
+## Match Access metric names to `BCGcalc` metric names
+### 
+df_Met_Mem[, "AttributeName"] <- gsub("_att"
+                                      , "_BCG_att"
+                                      , df_Met_Mem[, "AttributeName"])
+### 
+MetNam_Access <- "pi_Trout_Brook_Wild"
+MetNam_R <- "pi_brooktrout_wild"
+df_Met_Mem[, "AttributeName"] <- ifelse(df_Met_Mem[, "AttributeName"] == MetNam_Access
+                                        , MetNam_R
+                                        , df_Met_Mem[, "AttributeName"])
+###
+MetNam_Access <- "pi_BCG_att5"
+MetNam_R <- "pi_BCG_att5extra"
+df_Met_Mem[, "AttributeName"] <- ifelse(df_Met_Mem[, "AttributeName"] == MetNam_Access
+                                        , MetNam_R
+                                        , df_Met_Mem[, "AttributeName"])
+#
+## Match data and R function columns names
+df_Met_Mem[, "INDEX_NAME"] <- "BCG_CT_2015"
+df_Met_Mem[, "SITE_TYPE"] <- df_Met_Mem[, "Module"]
+df_Met_Mem[, "INDEX_REGION"] <- df_Met_Mem[, "Module"]
+df_Met_Mem[, "SAMPLEID"] <- df_Met_Mem[, "VisitNum"]
+df_Met_Mem[, "METRIC_NAME"] <- df_Met_Mem[, "AttributeName"]
+df_Met_Mem[, "METRIC_VALUE"] <- df_Met_Mem[, "AttributeValue"]
+df_Met_Mem[, "LEVEL"] <- df_Met_Mem[, "Tier"]
+#df_Met_Mem[, "NUMERIC_RULES"] <- df_Met_Mem[, ""]
+df_Met_Mem[, "SYMBOL"] <- df_Met_Mem[, "Operator"]
+df_Met_Mem[, "LOWER"] <- df_Met_Mem[, "LowNode"]
+df_Met_Mem[, "UPPER"] <- df_Met_Mem[, "HighNode"]
+#df_Met_Mem[, "INCREASE"] <- df_Met_Mem[, ""]
+#df_Met_Mem[, "DESCRIPTION"] <- df_Met_Mem[, ""]
+df_Met_Mem[, "RULE_TYPE"] <- paste0("Rule", df_Met_Mem[, "Rules", TRUE] - 1)
+df_Met_Mem[, "MEMBERSHIP"] <- df_Met_Mem[, "AttributeMembership"]
+#df_Met_Mem[, "NAME_WIDE"] <- df_Met_Mem[, ""]
+
+
+# Special Cases to investigate
+## Comment out in final version
+#
+# #fish01_level4, fish02_level2, fish03_level2
+# VisitNum_CaseStudy <- c("11227", "13877", "20594")
+# df_Met_Mem <- df_Met_Mem[df_Met_Mem$SAMPLEID %in% VisitNum_CaseStudy, ]
+# # errors in previous levels assignment
+# VisitNum_CaseStudy <- c("12993", "15044", "20630", "21233")
+# df_Met_Mem <- df_Met_Mem[df_Met_Mem$SAMPLEID %in% VisitNum_CaseStudy, ]
+# # errors in bug01
+# VisitNum_CaseStudy <- c("11882_1_07-B-033_Kick Net 2M2"
+#                         , "14284_1_790_TT Kick Net 2m2"
+#                         , "14293_1_826_TT Kick Net 2m2")
+# df_Met_Mem <- df_Met_Mem[df_Met_Mem$SAMPLEID %in% VisitNum_CaseStudy, ]
+
+
+
+
+# Calc Level Membership
+df_Lev_Mem <- BCG.Level.Membership(df_Met_Mem, df_rules)
+
+# Save
+write.table(df_Lev_Mem, "Calc_Lev_Memb.tsv", sep = "\t"
+            , row.names = FALSE, col.names = TRUE)
+```
+
+# Level Membership, QC
+Insert code to filter for the 15 samples with issues.
+
+```{r BAD_Lev_Memb_QC, eval=FALSE}
+# Packages
+library(readxl)
+library(dplyr)
+library(testthat)
+
+# Data, Calc
+fn_Calc <- "Calc_Lev_Memb.tsv"
+df_Calc <- read.delim(fn_Calc)
+
+# Munge, Calc
+df_Calc[is.na(df_Calc[, "L1"]), "L1"] <- 0
+df_Calc[is.na(df_Calc[, "L2"]), "L2"] <- 0
+df_Calc[is.na(df_Calc[, "L3"]), "L3"] <- 0
+df_Calc[is.na(df_Calc[, "L4"]), "L4"] <- 0
+df_Calc[is.na(df_Calc[, "L5"]), "L5"] <- 0
+df_Calc[is.na(df_Calc[, "L6"]), "L6"] <- 0
+
+# Data, QC
+fn_QC <- "CT_BCG_R_QC_20210723.xlsx"
+sn_QC <- "Access_BCG_TierMembership"
+df_QC <- read_excel(fn_QC
+                    , sheet = sn_QC
+                    , skip = 7)
+
+# Munge, QC
+df_QC[, "SAMPLEID"] <- df_QC[, "VisitNum"]
+df_QC[, "SITE_TYPE"] <- paste0(df_QC[, "VisitType", TRUE]
+                               , "0"
+                               , df_QC[, "GroupNumber", TRUE])
+df_QC[, "L1"] <- df_QC[, "DgrOfTier1"]
+df_QC[, "L2"] <- df_QC[, "DgrOfTier2"]
+df_QC[, "L3"] <- df_QC[, "DgrOfTier3"]
+df_QC[, "L4"] <- df_QC[, "DgrOfTier4"]
+df_QC[, "L5"] <- df_QC[, "DgrOfTier5"]
+df_QC[, "L6"] <- df_QC[, "DgrOfTier6"]
+# find dups
+df_QC[duplicated(df_QC$VisitNum), "VisitNum"]
+# remove dups
+dup_ID <- c("6252_1_MD18- FC_Field check-NQ Pick"
+            , "6252_1_MD18- NQ Pick_NQ Pick")
+df_QC <- filter(df_QC, !(VisitNum %in% dup_ID))
+# Remove samples with summed membership not equal to one
+VisitNum_BadSum <- c("12993", "15044", "20630", "21233")
+df_QC <- filter(df_QC, !(VisitNum %in% VisitNum_BadSum))
+
+# merge to get lined up
+df_merge <- merge(df_Calc
+                  , df_QC
+                  , by = c("SAMPLEID", "SITE_TYPE")
+                  , suffixes = c("_Calc", "_QC"))
+
+# Filter for 15 samples with issues
+Diff_L2_RowID <- c(195, 608, 665, 674, 1065, 1105, 2162)
+Diff_L3_RowID <- c(608, 674, 1065, 2162)
+Diff_L4_RowID <- c(116, 195, 665, 674, 772, 1045, 1068, 1105, 1113, 2366)
+Diff_L5_RowID <- c(116, 772, 1045, 1068, 113, 2375)
+Diff_all_RowID <- sort(unique(c(Diff_L2_RowID
+                                , Diff_L3_RowID
+                                , Diff_L4_RowID
+                                , Diff_L5_RowID)))
+df_merge <- df_merge[Diff_all_RowID, ]
+
+# Test Columns
+col_test <- paste0("L", 1:6)
+## 
+test_num <- 1
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 2
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 3
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 4
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+##
+test_num <- 5
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+##
+test_num <- 6
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+##
+# Check for potential errors
+# Test Sum
+df_merge[, "L_Sum_Calc"] <- df_merge[, "L1_Calc"] + 
+                            df_merge[, "L2_Calc"] + 
+                            df_merge[, "L3_Calc"] + 
+                            df_merge[, "L4_Calc"] + 
+                            df_merge[, "L5_Calc"] + 
+                            df_merge[, "L6_Calc"]
+df_merge[, "L_Sum_QC"] <- df_merge[, "L1_QC"] + 
+                            df_merge[, "L2_QC"] + 
+                            df_merge[, "L3_QC"] + 
+                            df_merge[, "L4_QC"] + 
+                            df_merge[, "L5_QC"] + 
+                            df_merge[, "L6_QC"]
+expect_equal(df_merge[, "L_Sum_Calc"], df_merge[, "L_Sum_QC"])
+expect_equal(df_merge[, "L_Sum_Calc"], rep(1, nrow(df_merge)))
+expect_equal(df_merge[, "L_Sum_QC"], rep(1, nrow(df_merge)))
+
+
+# Save
+write.table(df_merge, "BAD_Lev_Memb.tsv", sep = "\t"
+            , row.names = FALSE, col.names = TRUE)
+
+```
+
+# Level Assignment
+Calculate Level Assignment for both Access (QC) and R (Calc) Level Memberships.
+
+```{r BAD_Lev_Assign_Calc, eval=TRUE}
+# Packages
+library(BCGcalc)
+
+# Data
+fn_Lev_Mem <- "BAD_Lev_Memb.tsv"
+df_Lev_Mem <- read.delim(fn_Lev_Mem)
+
+# Level Membership, Calc (R)
+# Munge
+df_Lev_Mem[, "L1"] <- df_Lev_Mem[, "L1_Calc"]
+df_Lev_Mem[, "L2"] <- df_Lev_Mem[, "L2_Calc"]
+df_Lev_Mem[, "L3"] <- df_Lev_Mem[, "L3_Calc"]
+df_Lev_Mem[, "L4"] <- df_Lev_Mem[, "L4_Calc"]
+df_Lev_Mem[, "L5"] <- df_Lev_Mem[, "L5_Calc"]
+df_Lev_Mem[, "L6"] <- df_Lev_Mem[, "L6_Calc"]
+# Calc
+df_Levels_Calc <- BCG.Level.Assignment(df_Lev_Mem)
+
+# Level Membership, QC (Access)
+# Munge
+df_Lev_Mem[, "L1"] <- df_Lev_Mem[, "L1_QC"]
+df_Lev_Mem[, "L2"] <- df_Lev_Mem[, "L2_QC"]
+df_Lev_Mem[, "L3"] <- df_Lev_Mem[, "L3_QC"]
+df_Lev_Mem[, "L4"] <- df_Lev_Mem[, "L4_QC"]
+df_Lev_Mem[, "L5"] <- df_Lev_Mem[, "L5_QC"]
+df_Lev_Mem[, "L6"] <- df_Lev_Mem[, "L6_QC"]
+# Calc
+df_Levels_QC <- BCG.Level.Assignment(df_Lev_Mem)
+
+# Merge
+## Merge Levels
+## remove L1:L6
+col_remove <- paste0("L", 1:6)
+col_keep <- !names(df_Levels_QC) %in% col_remove
+df_Levels_merge <- merge(df_Levels_Calc[, col_keep]
+                  , df_Levels_QC[, col_keep]
+                  , by = c("SampleID")
+                  , suffixes = c("_Calc", "_QC"))
+## Append back to original file
+df_BAD <- merge(df_Lev_Mem
+                , df_Levels_merge
+                , by.x = "SAMPLEID"
+                , by.y = "SampleID")
+
+# Save
+write.table(df_BAD, file = "BAD_Results.tsv", sep = "\t"
+            , row.names = FALSE, col.names = TRUE)
+
+
+# Differences
+df_BAD[, "Level_Final_Calc"] <- paste(df_BAD[, "Lev.1.Name_Calc"]
+                                  , df_BAD[, "Lev.2.Name_Calc"]
+                                  , sep = "/")
+df_BAD[, "Level_Final_QC"] <- paste(df_BAD[, "Lev.1.Name_QC"]
+                                  , df_BAD[, "Lev.2.Name_QC"]
+                                  , sep = "/")
+
+# Tables
+## Compare Final Levels
+knitr::kable(table(df_BAD[, "Level_Final_Calc"], df_BAD[, "Level_Final_QC"])
+             , caption = "Final level assignment differences, 
+             Calc (R) = left and QC (Access) = top.")
+## Show samples
+col_keep2 <- c("SAMPLEID", "SITE_TYPE", "Level_Final_Calc", "Level_Final_QC")
+knitr::kable(df_BAD[, col_keep2]
+      , caption = "Final level assignment by sample, Calc (R) and Access (QC).")
+
+```
+
+# Summary
+* Five of 15 differences result in no difference in final level assignment.
+
+    + 3/4, n = 2
+    
+    + 3/NA, n = 1 (100% level 3)
+    
+    + 4/3, n = 1
+    
+    + 4/2, n = 1
+    
+* Net result is only 10 of 3,331 samples with different final level assignments
+between Access and R.  Though these 10 samples are across all four site types 
+(bug01, fish01, fish02, and fish03).
+
+* Expressed as percentages of the 3,131 samples:
+
+    + 99.5% of samples have exact matches between Access and R.
+    
+    + 0.5% of samples have some difference in level membership.
+    
+    + 0.3% of samples have a difference in final level assignment.

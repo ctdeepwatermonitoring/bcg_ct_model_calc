@@ -1,0 +1,1713 @@
+---
+title: "CT BCG Model Calculation in R"
+subtitle: "QC Access and R"
+author: "Erik.Leppo@tetratech.com"
+date: '2021-07-30'
+output:
+  html_document:
+    toc: yes
+    df_print: paged
+  html_notebook:
+    toc: yes
+    depth: 3
+    toc_float: yes
+---
+
+```{r NotebookOptions, eval=FALSE, echo=FALSE}
+#knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+# Purpose
+Converting BCG model for CT from Access to R.
+
+QC the calculations in both methods.
+
+Export data from Access to Excel manually as the "QC" files to compare to 
+what is generated in R (as the "Calc" files).
+
+Use the `testthat` package to compare the results.  Only get a response from 
+the function if there are differences.
+
+All code for calcualtions and checks are provided in the chunks (shaded 
+sections) below.  Renaming directories and installing packages should be the 
+only steps necessary to get the code to run on any system.
+
+At the end of the file a script to take the sample taxa all the way through
+final BCG level assignments is provided.  This will be saved as a script (.R)
+file.
+
+# Install Required Packages
+
+To perform the calcualtions two packages (`BioMonTools` and `BCGcalc`), both on 
+GitHub, must be installed.
+
+* https://github.com/leppott/BioMonTools/
+
+    + https://leppott.github.io/BioMonTools/
+
+* https://github.com/leppott/BCGcalc
+
+Installing packages from GitHub requires the `remotes` package
+
+```{r Pkg_GitHub, eval=FALSE}
+if(!require(remotes)){install.packages("remotes")}  #install if needed
+install_github("leppott/BCGcalc")
+install_github("leppott/BioMonTools")
+```
+
+The`testthat` package (hosted on CRAN) is used to do the QC checks between 
+Access and R.
+
+```{r Pkg_CRAN, eval=FALSE}
+install.packages("testthat")
+```
+
+# Data
+Use Access database output to calculate and then compare with R. 
+
+Created new queries (Export_R_*) to get sample taxa and master taxa info
+(phylogenetic and autecological) for metric calculation.
+
+## METRIC VALUES
+Status = ok
+
+### Calculate, Metric Values
+Calculate the metric values with Access inputs.
+
+Export data from Access as Excel.  
+Make column name changes in Access where needed.
+Then use the `BioMonTools` package to calculate metric values.
+
+Did not try to connect directly to Access as system and network settings can 
+influence the code needed to complete the operation.  SQL is below for the two 
+new Access queries.
+
+Some systems have trouble with converting the double quotes in the SQL below to 
+smart quotes.  This prevents the query from running 'as is' in Access.
+Double quotes have been replaced with single quotes to allow for a copy and 
+paste directly to Access.
+
+* **Query.Export_R_MetricCalc_Bugs**
+    
+> SELECT Taxa_MB_ni.VisitNum AS SampleID, 'BCG_CT_2015' AS Index_Name, 'bug' &
+> [GroupNumber] AS Index_Region, Taxa_MB_ni.GroupNumber, Taxa_MB_ni.GroupName,
+> Taxa_MB_ni.TaxaName AS TAXAID, Taxa_MB_ni.Count AS N_TAXA, 
+> Taxa_MB_ni.Excluded_Taxa AS EXCLUDE, TaxaMasterBug.Phylum, 
+> TaxaMasterBug.SubPhylum, TaxaMasterBug.Class, TaxaMasterBug.SubClass, Null AS
+> INFRAORDER, TaxaMasterBug.Order, TaxaMasterBug.SubOrder, TaxaMasterBug.Family,
+> TaxaMasterBug.SubFamily, TaxaMasterBug.Tribe, TaxaMasterBug.Genus, 
+> TaxaMasterBug.SubGenus, TaxaMasterBug.Species, TaxaMasterBug.Variety,
+> TaxaMasterBug.Rank, TaxaMasterBug.TolVal, TaxaMasterBug.TolValSource,
+> TaxaMasterBug.FFG, TaxaMasterBug.FFGSource, TaxaMasterBug.Habit,
+> TaxaMasterBug.HabitSource, TaxaMasterBug.LifeCycle AS LIFE_CYCLE,
+> TaxaMasterBug.LifeCycleSource, TaxaMasterBug.BCG_Attr, False AS NONTARGET, 
+> 'NA' AS THERMAL_INDICATOR, 'NA' AS FFG2, 'NA' AS TOLVAL2, 'NA' AS LONGLIVED, 
+> 'NA' AS HABITAT, 'NA' AS NOTEWORTHY
+> FROM Taxa_MB_ni INNER JOIN TaxaMasterBug ON Taxa_MB_ni.TaxaName =
+> TaxaMasterBug.FinalID
+> WHERE (((Taxa_MB_ni.GroupNumber)='01'));
+
+* **Query.Export_R_MetricCalc_Fish**
+
+> SELECT Taxa_MF_ni.VisitNum AS SAMPLEID, 'BCG_CT_2015' AS Index_Name, 'fish' &
+> [GroupNumber] AS Index_Region, Taxa_MF_ni.GroupNumberOrig,
+> Taxa_MF_ni.GroupNumber, Taxa_MF_ni.GroupName, Taxa_MF_ni.TaxaName AS TaxaID,
+> Taxa_MF_ni.Count AS N_TAXA, Taxa_MF_ni.Excluded_Taxa AS EXCLUDE, 
+> Taxa_MF_ni.Area AS DA_MI2, Taxa_MF_ni.AreaNew, TaxaMasterFish.Kingdom,
+> TaxaMasterFish.Phylum, TaxaMasterFish.Class, TaxaMasterFish.Order,
+> TaxaMasterFish.Family, TaxaMasterFish.Genus, TaxaMasterFish.Species,
+> TaxaMasterFish.Rank, TaxaMasterFish.Native, TaxaMasterFish.Stratum, 
+> TaxaMasterFish.Trophic, TaxaMasterFish.Tolerance, TaxaMasterFish.Lithophil,
+> TaxaMasterFish.Guild, TaxaMasterFish.Top_Carnivore_and_Trout,
+> TaxaMasterFish.Resident_and_Trout, TaxaMasterFish.Cold_Warmwater,
+> TaxaMasterFish.BrkTrNativeYN, TaxaMasterFish.BCG_Attr, 'NA' AS N_ANOMALIES, 
+> 'NA' AS SAMP_BIOMASS, 'NA' AS SAMP_WIDTH_M, 'NA' AS SAMP_LENGTH_M, 
+> 'NA' AS TYPE, 'NA' AS TOLER, 'NA' AS SILT, 'NA' AS HYBRID
+> FROM Taxa_MF_ni INNER JOIN TaxaMasterFish ON Taxa_MF_ni.TaxaName =
+> TaxaMasterFish.FinalID;
+
+#### Bugs
+The query returns 123,585 records but if filter for only "bug01" then only 
+45,323 records.
+
+No warnings for import of Excel file with guess max at 10^6 and all samples or 
+with only bug01.
+
+Had to add a number of fields in for the Access query for metric calculation in 
+R. 
+
+2339 samples
+
+```{r Met_Val_Calc_Bugs}
+# Packages
+library(readxl)
+library(BioMonTools)
+
+# Data
+fn_SampTaxa <- "Export_R_MetricCalc_Bugs.xlsx"
+df_SampTaxa <- as.data.frame(read_excel(path = fn_SampTaxa, guess_max = 10^6))
+
+# Munge, SampTaxa
+names(df_SampTaxa) <- toupper(names(df_SampTaxa))
+df_SampTaxa[, "N_TAXA"] <- as.numeric(df_SampTaxa[, "N_TAXA"])
+
+# Metric Calc
+df_Met_Val <- metric.values(fun.DF = df_SampTaxa
+                            , fun.Community = "bugs")
+
+# Save
+fn_Met_Val <- "Calc_Met_Val_Bugs.tsv"
+write.table(df_Met_Val
+            , file = fn_Met_Val
+            , sep = "\t"
+            , row.names = FALSE
+            , col.names = TRUE)
+```
+
+#### Fish
+Added in extra fields in Access query that are not in Access. These new fields 
+are not used in CT BCG model metrics but are used in the overall R package code; Query.Export_R_MetricCalc_Bugs.
+
+Had to add dummy data to avoid warnings in BioMonTools::metric.values().  The
+metrics related to these parameters are not used in the CT BCG model.
+
+* N_ANOMALIES = 0
+
+    + Number of anomalies
+
+* SAMP_WIDTH_M = 0
+
+    + Sample site stream width, meters
+
+* SAMP_LENGTH_M = 1
+
+    + Sample site stream length, meters
+
+```{r Met_Val_Calc_Fish}
+# Packages
+library(readxl)
+library(BioMonTools)
+
+# Data
+fn_SampTaxa <- "Export_R_MetricCalc_Fish.xlsx"
+df_SampTaxa <- as.data.frame(read_excel(path = fn_SampTaxa, guess_max = 10^6))
+
+# Munge, SampTaxa
+names(df_SampTaxa) <- toupper(names(df_SampTaxa))
+df_SampTaxa[, "N_TAXA"] <- as.numeric(df_SampTaxa[, "N_TAXA"])
+df_SampTaxa[, "N_ANOMALIES"] <- as.numeric(0)
+df_SampTaxa[, "SAMP_WIDTH_M"] <- as.numeric(0)
+df_SampTaxa[, "SAMP_LENGTH_M"] <- as.numeric(1)
+
+# Metric Calc
+df_Met_Val <- metric.values(fun.DF = df_SampTaxa
+                            , fun.Community = "fish")
+
+# Save
+fn_Met_Val <- "Calc_Met_Val_Fish.tsv"
+write.table(df_Met_Val
+            , file = fn_Met_Val
+            , sep = "\t"
+            , row.names = FALSE
+            , col.names = TRUE)
+```
+
+### Compare, Metric Values
+Compare metric values calculated in R (Calc) and Access (QC) with the same 
+Access inputs.
+
+Do not need to compare all metrics.  Only need to compare the metrics used for
+each community (bugs and fish).
+
+Using testhat::expect_equal() to compare values.  Only get results if there is 
+a difference.
+
+#### Bugs
+Both datasets have 2,339 records.
+
+7 metrics
+
+Problematic samples are rows 1794 and 1795.  These are the same samples with 
+duplicate entries in other data sets.  Remove them from QC.
+
+* 6252_1_MD18- FC_Field check-NQ Pick
+* 6252_1_MD18- NQ Pick_NQ Pick
+
+2337 records remaining to check.
+
+Metrics with issues:
+
+* pi_BCG_att5
+
+    + 749/2339
+    
+    + Calculation in BioMonTools seems fine.
+    
+    + Access uses 5 and 5.5
+    
+    + Added new metric "pi_BCG_att5extra" to BioMonTools::metric.values()
+    
+    + Modified BCGcalc Rules.xlsx to use pi_BCG_att5extra.
+    
+    + Did not check if other BCG metrics were affected using .5 since the values
+    tested as the same.
+
+* On one run had floating point errors at the 6th decimal place.  
+The function `expect_equal()` should account for these differences but it did 
+not on this particular run.  So manually set the tolerance to 1 * 10^-5.
+
+100% ok after changes.
+
+```{r Met_Val_QC_Bugs}
+# Packages
+library(readxl)
+library(testthat)
+library(dplyr)
+
+# BCG Metrics
+fn_Rules <- file.path(system.file(package = "BCGcalc")
+                      , "extdata"
+                      , "Rules.xlsx")
+df_Rules <- as.data.frame(read_excel(fn_Rules, sheet = "Rules"))
+myIndex <- "BCG_CT_2015"
+mySiteType <- "bug01"
+(MetNames <- unique(df_Rules[df_Rules[, "Index_Name"] == myIndex 
+                          & df_Rules[, "Site_Type"] == mySiteType
+                          , "Metric_Name"]))
+
+# Data, Calc
+fn_Calc <- "Calc_Met_val_Bugs.tsv"
+df_Calc <- read.delim(fn_Calc)
+
+# Data, QC
+fn_QC <- "Export_R_MetVal_Bugs.xlsx"
+df_QC <- as.data.frame(read_excel(fn_QC))
+
+# Munge, QC
+## update BCG metric names
+names_new <- gsub("_att", "_BCG_att", names(df_QC))
+names(df_QC) <- names_new
+# remove dups
+bad_samps <- c("6252_1_MD18- FC_Field check-NQ Pick"
+            , "6252_1_MD18- NQ Pick_NQ Pick")
+df_QC <- filter(df_QC, !(SAMPLEID %in% bad_samps))
+
+# Munge, Calc
+## update Calc Index Region
+df_Calc[, "Site_Type"] <- tolower(df_Calc[, "INDEX_REGION"])
+## Change metric name
+df_Calc[, "pi_BCG_att5"] <- df_Calc[, "pi_BCG_att5extra"]
+
+# QC, Metric Names
+MetNames %in% names(df_Calc)
+MetNames %in% names(df_QC)
+
+MetNames[!MetNames %in% names(df_Calc)]
+MetNames[!MetNames %in% names(df_QC)]
+
+# Merge (line up samples)
+col_keep <- c("SAMPLEID", "Site_Type", MetNames)
+df_merge <- merge(df_Calc[, col_keep]
+                  , df_QC[, col_keep]
+                  , by = c("SAMPLEID", "Site_Type")
+                  , suffixes = c("_Calc", "_QC"))
+
+# Test Columns
+col_test <- MetNames
+test_tol <- 1 * 10^-5
+## ni_total
+test_num <- 1
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## nt_BCG_att12
+test_num <- 2
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## nt_BCG_att123
+test_num <- 3
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## nt_total
+test_num <- 4
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## pi_BCG_att123
+test_num <- 5
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")]
+             , tolerance = test_tol)
+## pi_BCG_att5
+test_num <- 6
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")]
+             , tolerance = test_tol)
+## pt_BCG_att123
+test_num <- 7
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")]
+             , tolerance = test_tol)
+```
+
+#### Fish
+21 metrics
+
+Both QC and Calc have 794 samples.
+
+All metrics tested and 100% agreement between Access and R 
+(BioMonTools::metric.values()).
+
+Using testhat::expect_equal() to compare values.  Only get results if there is 
+a difference.
+
+All are ok.
+
+```{r Met_Val_QC_Fish}
+# Packages
+library(readxl)
+library(testthat)
+
+# BCG Metrics
+fn_Rules <- file.path(system.file(package = "BCGcalc")
+                      , "extdata"
+                      , "Rules.xlsx")
+df_Rules <- as.data.frame(read_excel(fn_Rules, sheet = "Rules"))
+myIndex <- "BCG_CT_2015"
+mySiteType <- c("fish01", "fish02", "fish03")
+(MetNames <- unique(df_Rules[df_Rules[, "Index_Name"] == myIndex 
+                          & df_Rules[, "Site_Type"] %in% mySiteType
+                          , "Metric_Name"]))
+
+# Data, Calc
+fn_Calc <- "Calc_Met_val_Fish.tsv"
+df_Calc <- read.delim(fn_Calc)
+
+# Data, QC
+fn_QC <- "Export_R_MetVal_Fish.xlsx"
+df_QC <- as.data.frame(read_excel(fn_QC))
+
+# Munge, QC
+## update BCG metric names
+names_new <- gsub("_att", "_BCG_att", names(df_QC))
+names(df_QC) <- names_new
+## rename column
+names(df_QC)[names(df_QC) == "pi_Trout_Brook_Wild"] <- "pi_brooktrout_wild"
+
+# Munge, Calc
+df_Calc[, "Site_Type"] <- tolower(df_Calc[, "INDEX_REGION"])
+
+# QC, Metric Names
+MetNames %in% names(df_Calc)
+MetNames %in% names(df_QC)
+
+MetNames[!MetNames %in% names(df_Calc)]
+MetNames[!MetNames %in% names(df_QC)]
+
+
+# Merge (line up samples)
+col_keep <- c("SAMPLEID", "Site_Type", MetNames)
+df_merge <- merge(df_Calc[, col_keep]
+                  , df_QC[, col_keep]
+                  , by = c("SAMPLEID", "Site_Type")
+                  , suffixes = c("_Calc", "_QC"))
+
+# Test Columns
+col_test <- MetNames
+## 
+test_num <- 1
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## "pi_brooktrout_wild" (only fish01, small/cold)
+test_num <- 2
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 3
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 4
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 5
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 6
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 7
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 8
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 9
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 10
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 11
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 12
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 13
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 14
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 15
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 16
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 17
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 18
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 19
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 20
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 21
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+```
+
+## METRIC MEMBERSHIP
+Status = ok
+
+### Calculate, Metric Membership
+Calculate the metric memberships with Access inputs.
+
+Convert metric values to BCG metric membership.
+
+2 samples with dups.  Remove them.
+
+* 6252_1_MD18- FC_Field check-NQ Pick
+
+* 6252_1_MD18- NQ Pick_NQ Pick
+
+Had to update BCGcalc::BCG.Metric.Membership() to allow for calculation of
+bugs and fish at the same time.  If no NA when assigning membership are ok
+but if use both then get NA and "missing values are not allowed in subscripted
+assignments of data frames".  Issue #53
+
+https://github.com/leppott/BCGcalc/issues/53
+
+```{r Met_Mem_Calc, eval=FALSE}
+# Packages
+library(readxl)
+library(BCGcalc)
+library(tidyr)
+library(dplyr)
+
+# Data
+fn_Met_Val <- "CT_BCG_R_QC_20210723.xlsx"
+sn_Met_Val <- "Access_BCG_MetricValues"
+df_Met_Val <- read_excel(fn_Met_Val, sheet = sn_Met_Val, skip = 7)
+
+# BCG Rules, Metrics
+df_rules <- read_excel(system.file("./extdata/Rules.xlsx", package="BCGcalc")
+                       , sheet = "Rules") 
+
+# Munge
+## Match data and R function columns names
+df_Met_Val[, "INDEX_NAME"] <- "BCG_CT_2015"
+df_Met_Val[, "SITE_TYPE"] <- df_Met_Val[, "Module"]
+df_Met_Val[, "INDEX_REGION"] <- df_Met_Val[, "Module"]
+df_Met_Val[, "SAMPLEID"] <- df_Met_Val[, "VisitNum"]
+## Filter for only relevant index regions
+df_Met_Val <- filter(df_Met_Val, Module %in% c("bug01"
+                                               , "fish01"
+                                               , "fish02"
+                                               , "fish03"))
+## Filter out known dups
+dup_ID <- c("6252_1_MD18- FC_Field check-NQ Pick"
+            , "6252_1_MD18- NQ Pick_NQ Pick")
+df_Met_Val <- filter(df_Met_Val, !VisitNum %in% dup_ID)
+## Convert from long to wide format
+df_Met_Val_wide <- pivot_wider(df_Met_Val
+                               , id_cols = c("SAMPLEID"
+                                             , "INDEX_NAME"
+                                             , "SITE_TYPE"
+                                             , "INDEX_REGION")
+                               , names_from = "AttributeName"
+                               , values_from = "AttributeValue"
+                               , values_fill = -999)
+
+# Munge
+## update BCG metric names
+names_new <- gsub("_att", "_BCG_att", names(df_Met_Val_wide))
+names(df_Met_Val_wide) <- names_new
+## rename column
+MetNam_Access <- "pi_Trout_Brook_Wild"
+MetNam_R <- "pi_brooktrout_wild"
+names(df_Met_Val_wide)[names(df_Met_Val_wide) == MetNam_Access] <- MetNam_R
+## pi_BCG_att5 to pi_BCG_att5extra in Rules
+MetNam_Access <- "pi_BCG_att5"
+MetNam_R <- "pi_BCG_att5extra"
+names(df_Met_Val_wide)[names(df_Met_Val_wide) == MetNam_Access] <- MetNam_R
+
+# Names to upper cases
+names(df_rules) <- toupper(names(df_rules))
+
+# Calc Metric Membership
+df_Met_Mem <- BCG.Metric.Membership(df_Met_Val_wide
+                                     , df_rules)
+
+# Save
+fn_Met_Mem <- "Calc_Met_Mem.tsv"
+write.table(df_Met_Mem
+            , file = fn_Met_Mem
+            , sep = "\t"
+            , row.names = FALSE
+            , col.names = TRUE)
+```
+
+### Compare, Metric Membership
+Compare metric memberships calculated in R (Calc) and Access (QC) with the same
+Access inputs.
+
+Using testhat::expect_equal() to compare values.  Only get results if there is 
+a difference.
+
+Remove the 2 problematic samples.
+
+* 6252_1_MD18- FC_Field check-NQ Pick
+
+* 6252_1_MD18- NQ Pick_NQ Pick 
+
+* Need to update the BCG metric names in QC so will match with rules table.
+
+* Rule X in Access is Rule X - 1 in R
+
+* Change NA in calc data to 0 to match with QC data.
+
+33/82,741 to check
+
+Were all NA before changed them to 0.  
+
+All fish02 or fish03
+
+all are "L1_Rule0_pi_BCG_att66a6b"
+
+check to see if NA instead of 0 and then assigned incorrectly.
+
+Calc = 0 and QC = 1
+
+Had to change code in `BCG.Metric.Membership()` to use <= and >= instead of 
+< and > for upper and lower bounds.  One metric has 0 for both upper and lower.
+Was generating NA but Increase = FALSE so should be 1 not 0.
+
+```{r Met_Mem_QC}
+# Packages
+library(readxl)
+library(dplyr)
+library(testthat)
+
+# Data QC
+fn_QC <- "CT_BCG_R_QC_20210723.xlsx"
+sn_QC <- "Access_BCG_MetricMembership"
+df_QC <- as.data.frame(read_excel(fn_QC
+                                  , sheet = sn_QC
+                                  , skip = 7))
+
+# Munge QC
+## Filter out known dups
+dup_ID <- c("6252_1_MD18- FC_Field check-NQ Pick"
+            , "6252_1_MD18- NQ Pick_NQ Pick")
+df_QC <- filter(df_QC, !VisitNum %in% dup_ID)
+## Match Access metric names to `BCGcalc` metric names
+### 
+df_QC[, "AttributeName"] <- gsub("_att"
+                                , "_BCG_att"
+                                , df_QC[, "AttributeName"])
+### 
+MetNam_Access <- "pi_Trout_Brook_Wild"
+MetNam_R <- "pi_brooktrout_wild"
+df_QC[, "AttributeName"] <- ifelse(df_QC[, "AttributeName"] == MetNam_Access
+                                  , MetNam_R
+                                  , df_QC[, "AttributeName"])
+###
+MetNam_Access <- "pi_BCG_att5"
+MetNam_R <- "pi_BCG_att5extra"
+df_QC[, "AttributeName"] <- ifelse(df_QC[, "AttributeName"] == MetNam_Access
+                                  , MetNam_R
+                                  , df_QC[, "AttributeName"])
+#
+## Match up column names
+df_QC[, "SAMPLEID"] <- df_QC[, "VisitNum"]
+df_QC[, "SITE_TYPE"] <- df_QC[, "Module"]
+df_QC[, "NAME_WIDE"] <- paste0(df_QC[, "Module", TRUE]
+                               , "_L"
+                               , df_QC[, "Tier", TRUE]
+                               , "_Rule"
+                               , as.numeric(df_QC[, "Rules", TRUE]) - 1
+                               , "_"
+                               , df_QC[, "AttributeName", TRUE])
+df_QC[, "MEMBERSHIP"] <- df_QC[, "AttributeMembership"]
+
+
+# Data Calc
+fn_Calc <- "Calc_Met_Mem.tsv"
+df_Calc <- read.delim(fn_Calc)
+
+# Munge, Calc
+## Change NA to match 0 in Access
+df_Calc[, "MEMBERSHIP"] <- ifelse(is.na(df_Calc[, "MEMBERSHIP"])
+                                  , 0
+                                  , df_Calc[, "MEMBERSHIP"])
+
+# Columns to keep
+col_keep <- names(df_QC)[names(df_QC) %in% names(df_Calc)]
+
+# 
+df_Calc <- df_Calc[, col_keep]
+df_QC <- df_QC[, col_keep]
+
+# merge to get lined up
+df_merge <- merge(df_Calc
+                  , df_QC
+                  , by = c("SAMPLEID", "SITE_TYPE", "NAME_WIDE")
+                  , suffixes = c("_Calc", "_QC"))
+
+# Test Columns
+col_test <- c("MEMBERSHIP")
+## NominalTier
+test_num <- 1
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+```
+
+## LEVEL MEMBERSHIP
+Status = difference in Access vs. R.
+
+21 samples (out of 3,000+) with differences.  All trigger alternate rules.
+R seems to be more correct.  Access doesn't seem to apply the min/max rules
+as intended for alternate rule metrics.
+
+### Calculate, Level Membership
+Calculate the level memberships with Access inputs.
+
+Columns not all there in Access for calculation in R so have to add them.
+
+```{r Lev_Memb_Calc}
+# Packages
+library(readxl)
+library(BCGcalc)
+
+# Data
+fn_Met_Mem <- "CT_BCG_R_QC_20210723.xlsx"
+sn_Met_Mem <- "Access_BCG_MetricMembership"
+df_Met_Mem <- as.data.frame(read_excel(fn_Met_Mem, sheet = sn_Met_Mem, skip = 7))
+
+# BCG Rules, Metrics
+df_rules <- read_excel(system.file("./extdata/Rules.xlsx", package="BCGcalc")
+                       , sheet = "Rules") 
+
+# Munge, Rules
+names(df_rules) <- toupper(names(df_rules))
+
+# Munge, Met Mem
+## Match Access metric names to `BCGcalc` metric names
+### 
+df_Met_Mem[, "AttributeName"] <- gsub("_att"
+                                      , "_BCG_att"
+                                      , df_Met_Mem[, "AttributeName"])
+### 
+MetNam_Access <- "pi_Trout_Brook_Wild"
+MetNam_R <- "pi_brooktrout_wild"
+df_Met_Mem[, "AttributeName"] <- ifelse(df_Met_Mem[, "AttributeName"] == MetNam_Access
+                                        , MetNam_R
+                                        , df_Met_Mem[, "AttributeName"])
+###
+MetNam_Access <- "pi_BCG_att5"
+MetNam_R <- "pi_BCG_att5extra"
+df_Met_Mem[, "AttributeName"] <- ifelse(df_Met_Mem[, "AttributeName"] == MetNam_Access
+                                        , MetNam_R
+                                        , df_Met_Mem[, "AttributeName"])
+#
+## Match data and R function columns names
+df_Met_Mem[, "INDEX_NAME"] <- "BCG_CT_2015"
+df_Met_Mem[, "SITE_TYPE"] <- df_Met_Mem[, "Module"]
+df_Met_Mem[, "INDEX_REGION"] <- df_Met_Mem[, "Module"]
+df_Met_Mem[, "SAMPLEID"] <- df_Met_Mem[, "VisitNum"]
+df_Met_Mem[, "METRIC_NAME"] <- df_Met_Mem[, "AttributeName"]
+df_Met_Mem[, "METRIC_VALUE"] <- df_Met_Mem[, "AttributeValue"]
+df_Met_Mem[, "LEVEL"] <- df_Met_Mem[, "Tier"]
+#df_Met_Mem[, "NUMERIC_RULES"] <- df_Met_Mem[, ""]
+df_Met_Mem[, "SYMBOL"] <- df_Met_Mem[, "Operator"]
+df_Met_Mem[, "LOWER"] <- df_Met_Mem[, "LowNode"]
+df_Met_Mem[, "UPPER"] <- df_Met_Mem[, "HighNode"]
+#df_Met_Mem[, "INCREASE"] <- df_Met_Mem[, ""]
+#df_Met_Mem[, "DESCRIPTION"] <- df_Met_Mem[, ""]
+df_Met_Mem[, "RULE_TYPE"] <- paste0("Rule", df_Met_Mem[, "Rules", TRUE] - 1)
+df_Met_Mem[, "MEMBERSHIP"] <- df_Met_Mem[, "AttributeMembership"]
+#df_Met_Mem[, "NAME_WIDE"] <- df_Met_Mem[, ""]
+
+
+# Special Cases to investigate
+## Comment out in final version
+#
+# #fish01_level4, fish02_level2, fish03_level2
+# VisitNum_CaseStudy <- c("11227", "13877", "20594")
+# df_Met_Mem <- df_Met_Mem[df_Met_Mem$SAMPLEID %in% VisitNum_CaseStudy, ]
+# # errors in previous levels assignment
+# VisitNum_CaseStudy <- c("12993", "15044", "20630", "21233")
+# df_Met_Mem <- df_Met_Mem[df_Met_Mem$SAMPLEID %in% VisitNum_CaseStudy, ]
+# # errors in bug01
+# VisitNum_CaseStudy <- c("11882_1_07-B-033_Kick Net 2M2"
+#                         , "14284_1_790_TT Kick Net 2m2"
+#                         , "14293_1_826_TT Kick Net 2m2")
+# df_Met_Mem <- df_Met_Mem[df_Met_Mem$SAMPLEID %in% VisitNum_CaseStudy, ]
+
+
+
+
+# Calc Level Membership
+df_Lev_Mem <- BCG.Level.Membership(df_Met_Mem, df_rules)
+
+# Save
+write.table(df_Lev_Mem, "Calc_Lev_Memb.tsv", sep = "\t"
+            , row.names = FALSE, col.names = TRUE)
+```
+
+### Compare, Level Membership
+Compare level memberships calculated in R (Calc) and Access (QC) with the same
+Access inputs.
+
+Using testhat::expect_equal() to compare values.  Only get results if there is 
+a difference.
+
+QC has 3135 records.  Only 3133 unique VisitNum.
+
+Remove duplicates.
+
+* 6252_1_MD18- FC_Field check-NQ Pick
+
+* 6252_1_MD18- NQ Pick_NQ Pick 
+
+3131 records to check.
+
+Convert NA in Calc (R) data to 0 for comparison with QC (Access) data.
+
+n = 2337 in L1 column only
+
+Double checked Rules.xlsx table and same for R and Access.
+
+Number of issues, first run.
+
+|Condition           | L1 | L2 | L3 | L4 | L5 | L6 |
+|:-------------------|---:|---:|---:|---:|---:|---:|
+|Mismatches          | 684| 667|1021| 888| 592|  16|
+|No previous L issues|  NA| 409| 359|  90|   1|   0|
+|QC is 0             | 679| 470| 476| 169|   1|   0|
+
+Issues by Site Type
+
+|SITE_TYPE|L1 |L2 |L3 |L4 |L5 |L6 |
+|:--------|--:|--:|--:|--:|--:|--:|
+|bug01    |  0|381|601|557|458|  0|
+|fish01   |183|148|120| 57| 63| 13|
+|fish02   |267| 88|177|135| 26|  3|
+|fish03   |234| 50|123|139| 45|  0|
+
+Number of issues after fixed data input (df_Met_Mem) so Access metric names 
+match those in rules.xlsx
+
+|Condition           | L1 | L2 | L3 | L4 | L5 | L6 |
+|:-------------------|---:|---:|---:|---:|---:|---:|
+|Mismatches          |   0|  10|   5|  10|   6|   0|
+
+Only 17 samples with issues.
+
+|SITE_TYPE|L1 |L2 |L3 |L4 |L5 |L6 |
+|:--------|--:|--:|--:|--:|--:|--:|
+|bug01    |  0|  3|  1|  3|  0|  0|
+|fish01   |  0|  0|  0|  6|  6|  0|
+|fish02   |  0|  6|  3|  1|  0|  0|
+|fish03   |  0|  1|  1|  0|  0|  0|
+
+Add "Exceptions" to Rules file in Excel then program special cases into 
+`BCG.Level.Membership()`.  Combination of metrics and subtotals into final 
+level membership is different for the three cases below (site type and level).
+
+* fish01, Level 4
+
+* fish02, Level 2
+
+* fish03, Level 2
+
+Retested
+
+Samples in Access with sum of membership not equal to one (n=4).  This is an 
+error in the application of the exception rules for fish02 and level 2.  The
+previous level 1 membership not accounted for in three of the  case.  In the 4th 
+case the previous level 1 and 2 membership not accounted for in the assignment
+of level membership.  The previous levels are accounted for in Access
+in the next step when levels are assigned but these 4 samples still get 
+incorrect scores.
+
+|VisitNum|Site_Type|L1  |L2|L3|L4|L5|L6|Sum |
+|:------:|:-------:|:---|:-|:-|:-|:-|:-|:---|
+|12993   |fish02   |1   |0 |1 |0 |0 |0 |2   |
+|15044   |fish02   |0.5 |1 |0 |0 |0 |0 |1.5 |
+|20630   |fish02   |0.5 |1 |0 |0 |0 |0 |1.5 |
+|21233   |fish02   |0.47|1 |0 |0 |0 |0 |1.47|
+
+Removed these four samples from the QC reducing the overall number of samples
+from 3131 to 3127.
+
+When run the samples in R get the following results with the correct sum of 
+memberships for each level.
+
+|VisitNum|Site_Type|L1  |L2|L3  |L4|L5|L6|Sum|
+|:------:|:-------:|:---|:-|:---|:-|:-|:-|:--|
+|12993   |fish02   |1   |0 |0   |0 |0 |0 |1  |
+|15044   |fish02   |0.5 |0 |0.5 |0 |0 |0 |1  |
+|20630   |fish02   |0.5 |0 |0.5 |0 |0 |0 |1  |
+|21233   |fish02   |0.47|0 |0.52|0 |0 |0 |1  |
+
+There are some differences in summed level values but can be attributed to 
+floating point errors.  When use `testthat::expect_equal()` and use 1 as the 
+check value no errors are shown.
+
+Number of values not exactly 1:
+
+* Access (QC), 4/3127
+
+* R (Calc), 2797/3127
+
+    + All differences at or beyond the 9th decimal place
+    
+    + Results are reported as rounded to 3 decimal places so not an issue.
+
+
+|Condition           | L1 | L2 | L3 | L4 | L5 | L6 |
+|:-------------------|---:|---:|---:|---:|---:|---:|
+|Mismatches          |   0| 114|  99| 117|  92|   0|
+
+
+|Site_Type| N  |
+|:--------|:--:|
+|bug01    | 204|
+|fish01   |  27|
+|fish02   |  71|
+|fish03   |  60|
+
+After dropping samples with floating point error:
+
+|Condition           | L1 | L2 | L3 | L4 | L5 | L6 |
+|:-------------------|---:|---:|---:|---:|---:|---:|
+|Mismatches          |   0|   7|   4|  10|   0|   0|
+
+Only 21 samples with issues.  After checking the Access query code and Excel 
+model development files it is believed that R is implementing the calculation
+algrorithm correctly.  Access does not appear to adhere to the correct use of
+min and max for the grouping of the metric scores when creating the level 
+memberships.
+
+|SiteType| N|
+|:-------|-:|
+|bug01   | 3|
+|fish01  | 6|
+|fish02  | 4|
+|fish03  | 2|
+
+```{r Lev_Memb_QC}
+# Packages
+library(readxl)
+library(dplyr)
+library(testthat)
+
+# Data, Calc
+fn_Calc <- "Calc_Lev_Memb.tsv"
+df_Calc <- read.delim(fn_Calc)
+
+# Munge, Calc
+df_Calc[is.na(df_Calc[, "L1"]), "L1"] <- 0
+df_Calc[is.na(df_Calc[, "L2"]), "L2"] <- 0
+df_Calc[is.na(df_Calc[, "L3"]), "L3"] <- 0
+df_Calc[is.na(df_Calc[, "L4"]), "L4"] <- 0
+df_Calc[is.na(df_Calc[, "L5"]), "L5"] <- 0
+df_Calc[is.na(df_Calc[, "L6"]), "L6"] <- 0
+
+# Data, QC
+fn_QC <- "CT_BCG_R_QC_20210723.xlsx"
+sn_QC <- "Access_BCG_TierMembership"
+df_QC <- read_excel(fn_QC
+                    , sheet = sn_QC
+                    , skip = 7)
+
+# Munge, QC
+df_QC[, "SAMPLEID"] <- df_QC[, "VisitNum"]
+df_QC[, "SITE_TYPE"] <- paste0(df_QC[, "VisitType", TRUE]
+                               , "0"
+                               , df_QC[, "GroupNumber", TRUE])
+df_QC[, "L1"] <- df_QC[, "DgrOfTier1"]
+df_QC[, "L2"] <- df_QC[, "DgrOfTier2"]
+df_QC[, "L3"] <- df_QC[, "DgrOfTier3"]
+df_QC[, "L4"] <- df_QC[, "DgrOfTier4"]
+df_QC[, "L5"] <- df_QC[, "DgrOfTier5"]
+df_QC[, "L6"] <- df_QC[, "DgrOfTier6"]
+# find dups
+df_QC[duplicated(df_QC$VisitNum), "VisitNum"]
+# remove dups
+dup_ID <- c("6252_1_MD18- FC_Field check-NQ Pick"
+            , "6252_1_MD18- NQ Pick_NQ Pick")
+df_QC <- filter(df_QC, !(VisitNum %in% dup_ID))
+# Remove samples with summed membership not equal to one
+VisitNum_BadSum <- c("12993", "15044", "20630", "21233")
+df_QC <- filter(df_QC, !(VisitNum %in% VisitNum_BadSum))
+
+# merge to get lined up
+df_merge <- merge(df_Calc
+                  , df_QC
+                  , by = c("SAMPLEID", "SITE_TYPE")
+                  , suffixes = c("_Calc", "_QC"))
+
+# Test Columns
+col_test <- paste0("L", 1:6)
+## 
+test_num <- 1
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 2
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 3
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## 
+test_num <- 4
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+##
+test_num <- 5
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+##
+test_num <- 6
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+##
+# Check for potential errors
+# Test Sum
+df_merge[, "L_Sum_Calc"] <- df_merge[, "L1_Calc"] + 
+                            df_merge[, "L2_Calc"] + 
+                            df_merge[, "L3_Calc"] + 
+                            df_merge[, "L4_Calc"] + 
+                            df_merge[, "L5_Calc"] + 
+                            df_merge[, "L6_Calc"]
+df_merge[, "L_Sum_QC"] <- df_merge[, "L1_QC"] + 
+                            df_merge[, "L2_QC"] + 
+                            df_merge[, "L3_QC"] + 
+                            df_merge[, "L4_QC"] + 
+                            df_merge[, "L5_QC"] + 
+                            df_merge[, "L6_QC"]
+expect_equal(df_merge[, "L_Sum_Calc"], df_merge[, "L_Sum_QC"])
+expect_equal(df_merge[, "L_Sum_Calc"], rep(1, nrow(df_merge)))
+expect_equal(df_merge[, "L_Sum_QC"], rep(1, nrow(df_merge)))
+
+
+```
+
+Take output from above chunk to check for floating point differences.
+
+Output should be blank.
+
+```{r IdentifyDifferences, eval=FALSE}
+# df_merge
+df_diff <- df_merge
+
+# L2
+df_diff[, "Diff_L2"] <- df_diff[, "L2_Calc"] - df_diff[, "L2_QC"]
+# L3
+df_diff[, "Diff_L3"] <- df_diff[, "L3_Calc"] - df_diff[, "L3_QC"]
+# L4
+df_diff[, "Diff_L4"] <- df_diff[, "L4_Calc"] - df_diff[, "L4_QC"]
+# L5
+df_diff[, "Diff_L5"] <- df_diff[, "L5_Calc"] - df_diff[, "L5_QC"]
+# Note Diff
+df_diff[, "Diff"] <- df_diff[, "Diff_L2"] + 
+                        df_diff[, "Diff_L3"] + 
+                        df_diff[, "Diff_L4"] + 
+                        df_diff[, "Diff_L5"]
+df_diff <- df_diff[df_diff[, "Diff"] > 1 * 10 ^ -6, ]
+
+table(df_diff$SITE_TYPE)
+```
+
+Check only the sites with differences that are not NA vs. 0 or floating point.
+
+```{r Diff, eval=FALSE}
+Diff_L2_RowID <- c(195, 608, 665, 674, 1065, 1105, 2162)
+Diff_L3_RowID <- c(608, 674, 1065, 2162)
+Diff_L4_RowID <- c(116, 195, 665, 674, 772, 1045, 1068, 1105, 1113, 2366)
+Diff_L5_RowID <- c(116, 772, 1045, 1068, 113, 2375)
+Diff_all_RowID <- sort(unique(c(Diff_L2_RowID
+                                , Diff_L3_RowID
+                                , Diff_L4_RowID
+                                , Diff_L5_RowID)))
+length(Diff_all_RowID)
+
+# Show differences
+df_diff2 <- df_merge[Diff_all_RowID, ]
+table(df_diff2$SITE_TYPE)
+
+```
+
+
+
+## LEVEL ASSIGNMENT
+Status = ok 
+
+Some differences but R seems to be correct over Access.
+All cases are edge cases or in differences in treatment of NA vs. Null vs. 0.
+
+In some cases Access assigns tied tiers (e.g., 50/50 or 40/40) as only the first
+tier to both nominal and second tier.  That is, rather than 3/4 Access assigns 
+3/3.  This only occred in 5 samples, all bug samples.
+
+As is the case for all QC checks, the checks were performed using inputs from 
+Access and not from previous calculations in R.  So no propogation of errors.
+
+### Calculate, Level Assignment
+Calculate the level assignments with Access inputs.
+
+```{r Lev_Assign_Calc}
+# Packages
+library(BCGcalc)
+library(readxl)
+
+# Data
+fn_Lev_Mem <- "CT_BCG_R_QC_20210723.xlsx"
+sn_Lev_Mem <- "Access_BCG_TierMembership"
+df_Lev_Mem <- read_excel(fn_Lev_Mem
+                          , sheet = sn_Lev_Mem
+                          , skip = 7)
+
+# Munge, Lev Memb
+df_Lev_Mem[, "SAMPLEID"] <- df_Lev_Mem[, "VisitNum"]
+df_Lev_Mem[, "L1"] <- df_Lev_Mem[, "DgrOfTier1"]
+df_Lev_Mem[, "L2"] <- df_Lev_Mem[, "DgrOfTier2"]
+df_Lev_Mem[, "L3"] <- df_Lev_Mem[, "DgrOfTier3"]
+df_Lev_Mem[, "L4"] <- df_Lev_Mem[, "DgrOfTier4"]
+df_Lev_Mem[, "L5"] <- df_Lev_Mem[, "DgrOfTier5"]
+df_Lev_Mem[, "L6"] <- df_Lev_Mem[, "DgrOfTier6"]
+
+# Calc Level Membership
+df_Levels <- BCG.Level.Assignment(df_Lev_Mem)
+
+# Save
+write.table(df_Levels, file = "Calc_Levels.tsv", sep = "\t"
+            , row.names = FALSE, col.names = TRUE)
+```
+
+### Compare, Level Assignment
+Compare level assignment calculated in R (Calc) and Access (QC) with the same
+Access inputs.
+
+Calc and QC are both 3135 columns
+
+Merge to get in the same order then use `testthat` package.
+
+Using testhat::expect_equal() to compare values.  Only get results if there is 
+a difference.
+
+3133 unique 
+
+6252_1_MD18- NQ Pick_NQ Pick in twice.  Remove it.
+
+3131 records to match.
+
+All differences were checked and in case R was correct.
+
+
+* Nominal Tier
+
+    + All ok
+    
+* Nominal Memb
+
+    + All ok
+   
+* Second Tier
+
+    + OK, R is correct.
+    
+    + 2147/3131 with issues
+    
+    + 2146 have R (Calc) SecondTier of NA.  All are NominalTier of 1.
+    
+        - R is correct.
+        
+    + The other 5 are all bug01.  And all have the same membership for two
+    levels.  Access incorrectly assigns the same level as nominal and second.
+    R is correct
+    
+        - 12257_1_17- BI_Kick Net BI 
+        - 12258_1_17- Surber C_Surber Sampler
+        - 26638_1_NR12- NQ_NQ Pick 
+        - 6926_1_17A- RA 2nd 100_Kick Net 2M2 
+        - 728_1_210A-RANQ_Kick Net 2M2
+        
+* Second Memb
+ 
+    + OK, R is correct.
+
+    + 4/3131 with issues
+    
+    + All (Calc and QC) are membership of "1" for NominalMem so should be "0"
+    for SecondMem.
+    
+    + QC have a Second membership that is not "0".  This is an error in the 
+    Access database.
+    
+    + These are the only 4 samples with a Combined Membership above "1".
+    
+        - 1.48 to 2.00, all fish02
+        
+        - VisitNum: 12993, 15044, 20630, 21233
+    
+    + There are 23 other samples with combined membership below 1.
+    
+        - 0.70 to 0.99, bugs and fish.
+        
+        - Should check into these but since Access and R the same will not 
+        investigate any further.
+
+```{r Lev_Assign_QC}
+# Packages
+library(readxl)
+library(dplyr)
+library(testthat)
+
+# Data QC
+fn_QC <- "CT_BCG_R_QC_20210723.xlsx"
+sn_QC <- "Access_BCG_Index"
+df_QC <- read_excel(fn_QC
+                    , sheet = sn_QC
+                    , skip = 7)
+
+# Munge QC
+df_QC[, "SiteType"] <- paste0(df_QC[, "VisitType", TRUE]
+                              , df_QC[, "GroupNumber", TRUE])
+## Filter out known dups
+dup_ID <- c("6252_1_MD18- FC_Field check-NQ Pick"
+            , "6252_1_MD18- NQ Pick_NQ Pick")
+df_QC <- filter(df_QC, !VisitNum %in% dup_ID)
+
+# Data Calc
+fn_Calc <- "Calc_Levels.tsv"
+df_Calc <- read.delim(fn_Calc)
+
+# Munge Calc
+df_Calc[, "NominalTier"] <- df_Calc[, "Lev.1.Name"]
+df_Calc[, "NominalMem"] <- df_Calc[, "Lev.1.Memb"]
+df_Calc[, "SecondTier"] <- df_Calc[, "Lev.2.Name"]
+df_Calc[, "SecondMem"] <- df_Calc[, "Lev.2.Memb"]
+df_Calc[, "VisitNum"] <- df_Calc[, "SampleID"]
+## Change NA to 0 to match Access
+df_Calc[, "SecondTier"] <- ifelse(is.na(df_Calc[, "SecondTier"])
+                                   , 0
+                                   , df_Calc[, "SecondTier"])
+
+# Columns to keep
+col_keep <- names(df_QC)[names(df_QC) %in% names(df_Calc)]
+
+# 
+df_Calc <- df_Calc[, col_keep]
+df_QC <- df_QC[, c(col_keep, "SiteType")]
+
+# merge to get lined up
+df_merge <- merge(df_Calc
+                  , df_QC
+                  , by = "VisitNum"
+                  , suffixes = c("_Calc", "_QC"))
+
+# Test Columns
+#col_test <- col_keep[2:5]
+col_test <- c("NominalTier", "NominalMem", "SecondTier", "SecondMem")
+## NominalTier
+test_num <- 1
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## NominalMem
+test_num <- 2
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## SecondTier
+test_num <- 3
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+## SecondMem
+test_num <- 4
+col_test[test_num]
+expect_equal(df_merge[, paste0((col_test)[test_num], "_Calc")]
+             , df_merge[, paste0((col_test)[test_num], "_QC")])
+
+
+# Show differences
+test_num <- 3
+col_test[test_num]
+bad_SecondTier <- df_merge[, paste0((col_test)[test_num], "_Calc")] != 
+  df_merge[, paste0((col_test)[test_num], "_QC")]
+df_bad <- df_merge
+df_bad[, "bad_SecondTier"] <- bad_SecondTier
+#
+table(df_bad$bad_SecondTier, useNA = "always")
+
+
+df_bad %>% filter(bad_SecondTier == TRUE)
+
+```
+
+# Complete R Process Example
+
+**rework with changes from above **
+
+
+Below are complete examples (one for bugs and one for fish) of calculating BCG
+levels from raw sample taxa.  
+
+The outputs include each of the four steps of the process as above in this file.
+
+* Metric Values
+
+* Metric Membership
+
+* Level Membership
+
+* Level Assignment
+
+No accounting for duplicate or bad samples has been include in the example
+code below.
+
+Outputs will include a date time stamp in name of the file.  This allows for 
+the retention of multiple runs without the possibility of overwriting existing
+files.
+
+Any variables that need to be changed are near the beginning of the script under
+the "Global" heading.
+
+The files are saved to the working directory but can be changed by modifying the
+`fn_output` variable under "Global".
+
+It is assumed that all packages, including `BioMonTools` and `BCGcalc`, have 
+been installed.  However, two options for package loading are included.  It is 
+not necessary to include both options in the final production code.  Comment
+out or remove one set of commands.  Both are active in the code below.
+
+For `BCG.Metric.Membership()` will get a warning about not including all 
+metrics.  This is ok if only running a subset of metrics (e.g., only 1 site type
+or only one community) but should not occur otherwise.
+
+## Complete, Bugs
+The only difference between the bug and fish code are following variables:
+
+* myCommunity
+
+    + "bugs" vs. "fish"
+
+* mySiteType
+
+    + "bug01" vs. c("fish01", "fish02", "fish03")
+
+* fn_SampTaxa
+
+    + "Export_R_MetricCalc_Bugs.xlsx" vs. "Export_R_MetricCalc_Fish.xlsx"
+
+```{r FullMonty_Bugs, eval=FALSE}
+# Packages, Install (if needed)
+## Option 1
+if(!require(remotes)){install.packages("remotes")}
+if(!require(BioMonTools)){install_github("leppott/BioMonTools")}
+if(!require(BCGcalc)){install_github("leppott/BCGcalc")}
+if(!require(readxl)){install.packages("readxl")}
+if(!require(dplyr)){install.packages("dplyr")}
+
+# Packages
+## Option 2
+library(BioMonTools)
+library(BCGcalc)
+library(readxl)
+library(dplyr)
+
+# Global
+myCommunity <- "bugs"
+myDateTime <- format(Sys.time(), "%Y%m%d_%H%M%S")
+dn_output <- getwd()
+mySiteType <- "bug01"
+
+# Data, BCG Rules
+df_rules <- read_excel(system.file("./extdata/Rules.xlsx", package="BCGcalc")
+                       , sheet = "Rules") 
+
+# METRIC VALUES ----
+# Data, Sample Taxa
+# Data
+fn_SampTaxa <- "Export_R_MetricCalc_Bugs.xlsx"
+df_SampTaxa <- as.data.frame(read_excel(path = fn_SampTaxa, guess_max = 10^6))
+
+# Munge
+names(df_SampTaxa) <- toupper(names(df_SampTaxa))
+df_SampTaxa[, "N_TAXA"] <- as.numeric(df_SampTaxa[, "N_TAXA"])
+if(myCommunity == "fish") {
+  df_SampTaxa[, "N_ANOMALIES"] <- as.numeric(0)
+  df_SampTaxa[, "SAMP_WIDTH_M"] <- as.numeric(0)
+  df_SampTaxa[, "SAMP_LENGTH_M"] <- as.numeric(1)
+}## IF ~ myCommunity ~ END
+
+# Metric Calc
+df_Met_Val <- metric.values(fun.DF = df_SampTaxa
+                            , fun.Community = myCommunity)
+
+# Save
+fn_Met_Val <- file.path(dn_output
+                        , paste0("Calc_Met_Val_"
+                                 , myCommunity
+                                 , "_"
+                                 , myDateTime
+                                 , ".tsv"))
+write.table(df_Met_Val
+            , file = fn_Met_Val
+            , sep = "\t"
+            , row.names = FALSE
+            , col.names = TRUE)
+
+# METRIC MEMBERSHIP ----
+
+# Munge
+## Match data and R function columns names
+df_Met_Val[, "INDEX_REGION"] <- tolower(df_Met_Val[, "INDEX_REGION"])
+df_Met_Val[, "SITE_TYPE"] <- df_Met_Val[, "INDEX_REGION"]
+## Filter for only relevant index regions
+df_Met_Val <- filter(df_Met_Val, SITE_TYPE %in% mySiteType)
+## Rules names to upper case
+names(df_rules) <- toupper(names(df_rules))
+## Filter for only relevant metrics
+df_rules <- filter(df_rules, SITE_TYPE %in% mySiteType)
+
+# Calc Metric Membership
+df_Met_Mem <- BCG.Metric.Membership(df_Met_Val, df_rules)
+
+# Save
+fn_Met_Mem <- file.path(dn_output
+                        , paste0("Calc_Met_Mem_"
+                                 , myCommunity
+                                 , "_"
+                                 , myDateTime
+                                 , ".tsv"))
+write.table(df_Met_Mem
+            , file = fn_Met_Mem
+            , sep = "\t"
+            , row.names = FALSE
+            , col.names = TRUE)
+
+# LEVEL MEMBERSHIP ----
+
+# Calc Level Membership
+df_Lev_Mem <- BCG.Level.Membership(df_Met_Mem, df_rules)
+
+# Save
+fn_Lev_Mem <- file.path(dn_output
+                        , paste0("Calc_Lev_Mem_"
+                                 , myCommunity
+                                 , "_"
+                                 , myDateTime
+                                 , ".tsv"))
+write.table(df_Lev_Mem
+            , fn_Lev_Mem
+            , sep = "\t"
+            , row.names = FALSE
+            , col.names = TRUE)
+
+# LEVEL ASSIGNMENT ----
+
+# Calc Level Membership
+df_Levels <- BCG.Level.Assignment(df_Lev_Mem)
+
+# Save
+fn_Levels <- file.path(dn_output
+                        , paste0("Calc_Levels"
+                                 , myCommunity
+                                 , "_"
+                                 , myDateTime
+                                 , ".tsv"))
+write.table(df_Levels
+            , fn_Levels
+            , sep = "\t"
+            , row.names = FALSE
+            , col.names = TRUE)
+```
+
+## Complete, Fish
+The only difference between the bug and fish code are following variables:
+
+* myCommunity
+
+    + "bugs" vs. "fish"
+
+* mySiteType
+
+    + c("bug01") vs. c("fish01", "fish02", "fish03")
+
+* fn_SampTaxa
+
+    + "Export_R_MetricCalc_Bugs.xlsx" vs. "Export_R_MetricCalc_Fish.xlsx"
+
+```{r FullMonty_Fish, eval=FALSE}
+# Packages, Install (if needed)
+## Option 1
+if(!require(remotes)){install.packages("remotes")}
+if(!require(BioMonTools)){install_github("leppott/BioMonTools")}
+if(!require(BCGcalc)){install_github("leppott/BCGcalc")}
+if(!require(readxl)){install.packages("readxl")}
+if(!require(dplyr)){install.packages("dplyr")}
+
+# Packages
+## Option 2
+library(BioMonTools)
+library(BCGcalc)
+library(readxl)
+library(dplyr)
+
+# Global
+myCommunity <- "fish"
+myDateTime <- format(Sys.time(), "%Y%m%d_%H%M%S")
+dn_output <- getwd()
+mySiteType <- c("fish01", "fish02", "fish03")
+
+# Data, BCG Rules
+df_rules <- read_excel(system.file("./extdata/Rules.xlsx", package="BCGcalc")
+                       , sheet = "Rules") 
+
+# METRIC VALUES ----
+# Data, Sample Taxa
+# Data
+fn_SampTaxa <- "Export_R_MetricCalc_Fish.xlsx"
+df_SampTaxa <- as.data.frame(read_excel(path = fn_SampTaxa, guess_max = 10^6))
+
+# Munge
+names(df_SampTaxa) <- toupper(names(df_SampTaxa))
+df_SampTaxa[, "N_TAXA"] <- as.numeric(df_SampTaxa[, "N_TAXA"])
+if(myCommunity == "fish") {
+  df_SampTaxa[, "N_ANOMALIES"] <- as.numeric(0)
+  df_SampTaxa[, "SAMP_WIDTH_M"] <- as.numeric(0)
+  df_SampTaxa[, "SAMP_LENGTH_M"] <- as.numeric(1)
+}## IF ~ myCommunity ~ END
+
+# Metric Calc
+df_Met_Val <- metric.values(fun.DF = df_SampTaxa
+                            , fun.Community = myCommunity)
+
+# Save
+fn_Met_Val <- file.path(dn_output
+                        , paste0("Calc_Met_Val_"
+                                 , myCommunity
+                                 , "_"
+                                 , myDateTime
+                                 , ".tsv"))
+write.table(df_Met_Val
+            , file = fn_Met_Val
+            , sep = "\t"
+            , row.names = FALSE
+            , col.names = TRUE)
+
+# METRIC MEMBERSHIP ----
+
+# Munge
+## Match data and R function columns names
+df_Met_Val[, "INDEX_REGION"] <- tolower(df_Met_Val[, "INDEX_REGION"])
+df_Met_Val[, "SITE_TYPE"] <- df_Met_Val[, "INDEX_REGION"]
+## Filter for only relevant index regions
+df_Met_Val <- filter(df_Met_Val, SITE_TYPE %in% mySiteType)
+## Rules names to upper case
+names(df_rules) <- toupper(names(df_rules))
+## Filter for only relevant metrics
+df_rules <- filter(df_rules, SITE_TYPE %in% mySiteType)
+
+# Calc Metric Membership
+df_Met_Mem <- BCG.Metric.Membership(df_Met_Val, df_rules)
+
+# Save
+fn_Met_Mem <- file.path(dn_output
+                        , paste0("Calc_Met_Mem_"
+                                 , myCommunity
+                                 , "_"
+                                 , myDateTime
+                                 , ".tsv"))
+write.table(df_Met_Mem
+            , file = fn_Met_Mem
+            , sep = "\t"
+            , row.names = FALSE
+            , col.names = TRUE)
+
+# LEVEL MEMBERSHIP ----
+
+# Calc Level Membership
+df_Lev_Mem <- BCG.Level.Membership(df_Met_Mem, df_rules)
+
+# Save
+fn_Lev_Mem <- file.path(dn_output
+                        , paste0("Calc_Lev_Mem_"
+                                 , myCommunity
+                                 , "_"
+                                 , myDateTime
+                                 , ".tsv"))
+write.table(df_Lev_Mem
+            , fn_Lev_Mem
+            , sep = "\t"
+            , row.names = FALSE
+            , col.names = TRUE)
+
+# LEVEL ASSIGNMENT ----
+
+# Calc Level Membership
+df_Levels <- BCG.Level.Assignment(df_Lev_Mem)
+
+# Save
+fn_Levels <- file.path(dn_output
+                        , paste0("Calc_Levels"
+                                 , myCommunity
+                                 , "_"
+                                 , myDateTime
+                                 , ".tsv"))
+write.table(df_Levels
+            , fn_Levels
+            , sep = "\t"
+            , row.names = FALSE
+            , col.names = TRUE)
+```
+
+# SessionInfo
+Show session info for R version and packages used for the code in this R 
+Notebook.
+
+Using sessioninfo package as that output is a bit more concise and a bit more
+easier to read than base sessionInfo().
+
+```{r SessionInfo}
+#sessionInfo()
+if(!require(sessioninfo)){install.packages("sessioninfo")}
+session_info()
+```
+
+# Summary
+
+* Overall
+
+    + Changes to metric names (n = 3).
+    
+        - BCG attributes metrics replace "_att" with "_BCG_att".
+        
+        - "pi_Trout_Brook_Wild" to "pi_brooktrout_wild"
+        
+        - "pi_BCG_att5" to "pi_BCG_att5extra"
+        
+    + Some changes to column names.
+
+* Metric Values
+
+    + All ok.
+    
+    + Queries for export of data from Access given in Metric Values section 
+    above.
+    
+        - Changes to three metric names (see overall comments above).
+        
+    + Some extra columns needed for the `BioMonTools` package that are not 
+    needed for CT BCG metrics but must be included to avoid warnings.
+    
+        - Extra columns in SQL code above.
+
+* Metric Membership
+
+    + All ok.
+    
+    + Rule X in Access is Rule X-1 in R where is is the rule number.
+    
+    + Updated code for upper and lower thresholds being 0.  Otherwise scored as
+    NA.
+    
+* Level Membership
+
+    + There are 21 of 3,131 samples where the application of alternate rules
+    between Access and R are different.  The application of the min and max
+    scores in Access does not seem to be correct.  R should be the pathway
+    going forward for calculations.
+    
+* Level Assignment
+
+    + All ok.
+    
+    
+    
+
+
